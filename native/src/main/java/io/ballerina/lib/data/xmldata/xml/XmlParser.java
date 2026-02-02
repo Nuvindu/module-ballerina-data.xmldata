@@ -719,7 +719,7 @@ class XmlParser {
         xmlParserData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.recordTypeStack.push(null);
-        xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+        xmlParserData.xsdModelGroupInfo.push(new LinkedHashMap<>());
         xmlParserData.xmlElementInfo.push(new HashMap<>());
         BMap<BString, Object> currentNode = xmlParserData.currentNode;
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
@@ -789,7 +789,7 @@ class XmlParser {
         xmlParserData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, xmlParserData)));
         xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.restTypes.push(recordType.getRestFieldType());
-        xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+        xmlParserData.xsdModelGroupInfo.push(new LinkedHashMap<>());
         xmlParserData.xmlElementInfo.push(new HashMap<>());
     }
 
@@ -869,7 +869,7 @@ class XmlParser {
             xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             xmlParserData.restTypes.push(restType);
             xmlParserData.arrayIndexes.push(new HashMap<>());
-            xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+            xmlParserData.xsdModelGroupInfo.push(new LinkedHashMap<>());
             xmlParserData.xmlElementInfo.push(new HashMap<>());
         }
     }

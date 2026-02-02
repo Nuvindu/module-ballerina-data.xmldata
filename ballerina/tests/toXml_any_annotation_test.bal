@@ -2084,12 +2084,25 @@ type Person345 record {
 public type SignatureMethod record {|
     @Sequence {minOccurs: 1, maxOccurs: 1}
     SequenceGroup52 sequenceGroup52;
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup53 sequenceGroup53;
     @Attribute
     string Algorithm;
 |};
 
 @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
 public type SequenceGroup52 record {|
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 1}
+    int HMACOutputLength?;
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 2}
+    @Any
+    anydata[]? anyElement;
+|};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type SequenceGroup53 record {|
     @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
     @SequenceOrder {value: 1}
     int HMACOutputLength?;
@@ -2107,7 +2120,7 @@ function test() returns error? {
         Algorithm: "", 
     sequenceGroup52: {
         HMACOutputLength: 5,
-        anyElement: []}};
+        anyElement: []},sequenceGroup53: {anyElement: []}};
     xml parsedValue = check toXml(sigMethod);
     SignatureMethod parsedBack = check parseAsType(parsedValue);
     test:assertEquals(parsedBack, sigMethod);

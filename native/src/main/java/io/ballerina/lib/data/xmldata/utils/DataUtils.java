@@ -448,6 +448,19 @@ public class DataUtils {
             }
 
             if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.REQUIRED)) {
+                if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG
+                        && isFieldAnnotatedWithSequence(analyzerData.rootRecord, fieldName)
+                        && hasAllOptionalFields((RecordType) fieldType)) {
+                    BMap<BString, Object> emptyRecord = initializeEmptySequenceRecord((RecordType) fieldType);
+                    currentMapValue.put(StringUtils.fromString(fieldName), emptyRecord);
+                    if (!analyzerData.xsdModelGroupInfo.isEmpty()) {
+                        HashMap<String, ModelGroupInfo> modelGroupInfo = analyzerData.xsdModelGroupInfo.peek();
+                        if (modelGroupInfo.containsKey(fieldName)) {
+                            modelGroupInfo.get(fieldName).markAsInitialized();
+                        }
+                    }
+                    continue;
+                }
                 throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, fieldName);
             }
         }
@@ -459,6 +472,89 @@ public class DataUtils {
                 throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, field.getFieldName());
             }
         }
+    }
+
+    /**
+     * Checks if a field is annotated with @Sequence annotation.
+     */
+    public static boolean isFieldAnnotatedWithSequence(RecordType recordType, String fieldName) {
+        if (recordType == null) {
+            return false;
+        }
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString annotKey : fieldAnnotation.getKeys()) {
+            String annotKeyStr = annotKey.getValue();
+            if (annotKeyStr.startsWith(Constants.MODULE_NAME) && annotKeyStr.endsWith(Constants.SEQUENCE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if all fields in a record type are optional or have @Any annotation with array type.
+     */
+    private static boolean hasAllOptionalFields(RecordType recordType) {
+        Map<String, Field> fields = recordType.getFields();
+        for (Map.Entry<String, Field> entry : fields.entrySet()) {
+            Field field = entry.getValue();
+            String fieldName = field.getFieldName();
+            // Check if field is optional
+            if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+                continue;
+            }
+            // Check if field is @Any annotated (which can produce no elements)
+            if (isFieldAnnotatedWithAny(recordType, fieldName)) {
+                continue;
+            }
+            // Field is required and not @Any annotated
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Initializes an empty record for a sequence group, with empty arrays for @Any annotated fields.
+     */
+    private static BMap<BString, Object> initializeEmptySequenceRecord(RecordType recordType) {
+        BMap<BString, Object> record = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
+        Map<String, Field> fields = recordType.getFields();
+        for (Map.Entry<String, Field> entry : fields.entrySet()) {
+            String fieldName = entry.getValue().getFieldName();
+            Type fieldType = TypeUtils.getReferredType(entry.getValue().getFieldType());
+
+            // Initialize @Any annotated array fields with empty arrays
+            if (isFieldAnnotatedWithAny(recordType, fieldName)) {
+                ArrayType arrayType = getArrayTypeFromFieldType(fieldType);
+                if (arrayType != null) {
+                    record.put(StringUtils.fromString(fieldName), ValueCreator.createArrayValue(arrayType));
+                }
+            }
+        }
+        return record;
+    }
+
+    /**
+     * Gets the ArrayType from a field type, handling union types (e.g., anydata[]?).
+     */
+    private static ArrayType getArrayTypeFromFieldType(Type fieldType) {
+        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+            return (ArrayType) fieldType;
+        } else if (fieldType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                Type referredMemberType = TypeUtils.getReferredType(memberType);
+                if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                    return (ArrayType) referredMemberType;
+                }
+            }
+        }
+        return null;
     }
 
     public static boolean isArrayValueAssignable(Type type) {
@@ -511,7 +607,7 @@ public class DataUtils {
         analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         analyzerData.restTypes.push(recordType.getRestFieldType());
-        analyzerData.xsdModelGroupInfo.push(new HashMap<>());
+        analyzerData.xsdModelGroupInfo.push(new LinkedHashMap<>());
         analyzerData.xmlElementInfo.push(new HashMap<>());
     }
 

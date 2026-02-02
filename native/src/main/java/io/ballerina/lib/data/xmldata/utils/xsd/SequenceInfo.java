@@ -336,4 +336,11 @@ public class SequenceInfo implements ModelGroupInfo {
     public String getFieldName() {
         return fieldName;
     }
+
+    @Override
+    public void markAsInitialized() {
+        if (this.occurrences == 0) {
+            this.occurrences = 1;
+        }
+    }
 }

@@ -54,6 +54,7 @@ import org.ballerinalang.langlib.xml.Concat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -598,7 +599,7 @@ class XmlTraversal {
             analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             analyzerData.attributeHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
-            analyzerData.xsdModelGroupInfo.push(new HashMap<>());
+            analyzerData.xsdModelGroupInfo.push(new LinkedHashMap<>());
             analyzerData.xmlElementInfo.push(new HashMap<>());
         }
 
@@ -782,7 +783,7 @@ class XmlTraversal {
 
             analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
-            analyzerData.xsdModelGroupInfo.push(new HashMap<>());
+            analyzerData.xsdModelGroupInfo.push(new LinkedHashMap<>());
             analyzerData.xmlElementInfo.push(new HashMap<>());
             analyzerData.arrayIndexes.push(new HashMap<>());
             if (restType.getTag() == TypeTags.ARRAY_TAG) {
