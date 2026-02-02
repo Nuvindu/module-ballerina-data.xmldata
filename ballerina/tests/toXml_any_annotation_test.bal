@@ -2075,3 +2075,40 @@ function testRoundTripWithNilAnyFields() returns error? {
     test:assertEquals(parsed.name, original.name);
     test:assertEquals(parsed?.address, original?.address);
 }
+
+type Person345 record {
+    string name;
+};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type SignatureMethod record {|
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup52 sequenceGroup52;
+    @Attribute
+    string Algorithm;
+|};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type SequenceGroup52 record {|
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 1}
+    int HMACOutputLength?;
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 2}
+    @Any
+    anydata[]? anyElement;
+|};
+
+@test:Config {
+    groups: ["toXml", "any", "pp"]
+}
+function test() returns error? {
+    SignatureMethod sigMethod = {
+        Algorithm: "", 
+    sequenceGroup52: {
+        HMACOutputLength: 5,
+        anyElement: []}};
+    xml parsedValue = check toXml(sigMethod);
+    SignatureMethod parsedBack = check parseAsType(parsedValue);
+    test:assertEquals(parsedBack, sigMethod);
+}
